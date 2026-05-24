@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netflix - Hetvi Birthday Special</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background-color: #141414;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        /* BACKGROUND FLOATING PARTICLES */
+        #particle-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; pointer-events: none; opacity: 0.25;
+        }
+
+        /* 1. CLEAN TOP APP BAR */
+        .top-app-bar {
+            background: linear-gradient(180deg, rgba(0,0,0,0.8) 0%, transparent 100%);
+            color: white;
+            text-align: center;
+            padding: 12px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            position: fixed;
+            top: 0; width: 100%; z-index: 1000;
+            text-transform: uppercase;
+        }
+
+        /* 2. PROFILE LOCK INTERFACE */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            width: 100%;
+            position: fixed;
+            top: 0; left: 0;
+            background-color: #141414;
+            z-index: 999;
+            transition: opacity 0.5s ease;
+            padding: 20px;
+        }
+
+        .profile-container h1 {
+            font-size: 2rem;
+            font-weight: 500;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+            text-align: center;
+        }
+
+        @media (min-width: 768px) {
+            .profile-container h1 { font-size: 3.5rem; }
+        }
+
+        .profile-gate {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+        }
+
+        .profile-card {
+            cursor: pointer;
+            color: #808080;
+            text-align: center;
+            transition: transform 0.3s ease, color 0.3s;
+        }
+
+        .profile-card:hover { color: #fff; transform: scale(1.05); }
+
+        .img-box {
+            width: 130px;
+            height: 130px;
+            border-radius: 4px;
+            border: 3px solid transparent;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.8);
+            background: #222;
+        }
+
+        @media (min-width: 768px) {
+            .img-box { width: 165px; height: 165px; border-width: 4px; }
+        }
+
+        .img-box video, .img-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-card:hover .img-box { border-color: #fff; }
+        .profile-name { font-size: 1.1rem; font-weight: bold; }
+
+        /* 3. CINEMATIC N INTRO */
+        #netflix-intro {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #000;
+            z-index: 1002;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .netflix-n {
+            color: #E50914; font-size: 8rem; font-weight: 900;
+            transform: scale(0.5); opacity: 0;
+            animation: zoomInIntro 1.4s forwards cubic-bezier(0.85, 0, 0.15, 1);
+        }
+
+        @media (min-width: 768px) {
+            .netflix-n { font-size: 14rem; }
+        }
+
+        @keyframes zoomInIntro {
+            0% { transform: scale(0.5); opacity: 0; filter: blur(4px); }
+            40% { opacity: 1; filter: blur(0); }
+            100% { transform: scale(4.5); opacity: 0; }
+        }
+
+        /* 4. PREMIUM APP DASHBOARD */
+        #main-dashboard {
+            opacity: 0; display: none;
+            transition: opacity 1s ease;
+            padding-bottom: 60px;
+            position: relative; z-index: 2;
+        }
+
+        .navbar {
+            padding: 15px 4%; display: flex; align-items: center; justify-content: space-between;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
+            position: fixed; top: 0; width: 100%; z-index: 100;
+        }
+        .logo { color: #E50914; font-size: 24px; font-weight: bold; letter-spacing: 0.5px; }
+        .nav-links { display: none; font-weight: bold; color: #aaa; font-size: 0.85rem; gap: 15px; }
+
+        @media (min-width: 768px) {
+            .logo { font-size: 32px; }
+            .nav-links { display: flex; }
+        }
+
+        /* Banner */
+        .banner {
+            height: 70vh;
+            position: relative;
+            display: flex; align-items: flex-end; padding-left: 4%; padding-bottom: 40px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        @media (min-width: 768px) {
+            .banner { height: 85vh; align-items: center; padding-bottom: 0; }
+        }
+
+        .banner-video {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            opacity: 0.45;
+        }
+
+        .banner-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to top, #141414 0%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.5) 100%);
+            z-index: 2;
+        }
+
+        .banner-content { max-width: 550px; position: relative; z-index: 3; padding-right: 4%; }
+        .banner-title { font-size: 2.2rem; font-weight: bold; margin-bottom: 10px; text-shadow: 2px 2px 8px rgba(0,0,0,0.8); }
+        .banner-match { color: #46d369; font-weight: bold; margin-bottom: 10px; display: inline-block; font-size: 0.9rem; }
+        .banner-desc { font-size: 1rem; line-height: 1.4; margin-bottom: 20px; text-shadow: 2px 2px 8px rgba(0,0,0,0.9); color: #e6e6e6; }
+        
+        @media (min-width: 768px) {
+            .banner-title { font-size: 4rem; }
+            .banner-match { font-size: 1.1rem; }
+            .banner-desc { font-size: 1.2rem; }
+        }
+
+        .btn {
+            background-color: #fff; color: #000; border: none; padding: 10px 24px;
+            font-size: 1rem; font-weight: bold; border-radius: 4px; margin-right: 10px;
+            cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center;
+        }
+        .btn:hover { background-color: #E50914; color: #fff; transform: translateY(-2px); }
+
+        /* Rows */
+        .row { margin: 25px 0; padding-left: 4%; }
+        .row-title { font-size: 1.2rem; font-weight: bold; margin-bottom: 12px; letter-spacing: 0.5px; }
+        
+        @media (min-width: 768px) {
+            .row { margin: 40px 0; }
+            .row-title { font-size: 1.6rem; }
+        }
+
+        .row-posters { 
+            display: flex; 
+            gap: 15px; 
+            overflow-x: auto; 
+            padding: 10px 0;
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .row-posters::-webkit-scrollbar { display: none; }
+
+        /* TOP 10 Cards */
+        .top10-card { 
+            display: flex; 
+            align-items: center; 
+            flex: 0 0 240px; 
+            height: 140px; 
+            cursor: pointer; 
+            transition: transform 0.3s;
+            scroll-snap-align: start;
+        }
+        @media (min-width: 768px) {
+            .top10-card { flex: 0 0 300px; height: 170px; }
+        }
+        .top10-card:hover { transform: scale(1.04); }
+
+        .top10-number {
+            font-size: 6rem; font-weight: 900; color: #141414; line-height: 1;
+            -webkit-text-stroke: 2px #808080; margin-right: -10px; position: relative; z-index: 1;
+            user-select: none;
+        }
+        @media (min-width: 768px) {
+            .top10-number { font-size: 9rem; -webkit-text-stroke: 3px #808080; }
+        }
+        .top10-card:hover .top10-number { -webkit-text-stroke: 2px #fff; }
+        
+        /* NEW JAZZY AUDIO/VIDEO BACKGROUND EFFECTS FOR STATIC CARDS */
+        .top10-box {
+            flex: 1; height: 100%; border-radius: 4px;
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start; 
+            padding: 12px; border: 1px solid #333;
+            background-size: cover; background-position: center;
+            background-color: #222;
+            position: relative; overflow: hidden;
+        }
+        
+        /* 🔥 AMAZING TRICK: Adding Ken Burns Cinematic Zoom Effect to Photos! */
+        .top10-box::before, .poster::before {
+            content: "";
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-image: inherit; background-size: cover; background-position: center;
+            z-index: 0;
+            animation: cinematicPan 20s infinite alternate ease-in-out;
+        }
+        
+        @keyframes cinematicPan {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.18) translate(-2%, -1%); }
+        }
+
+        .top10-box video, .poster video {
+            position: absolute; top:0; left:0; width:100%; height:100%; object-fit: cover; z-index: 1;
+        }
+
+        /* Posters */
+        .poster {
+            flex: 0 0 220px; height: 125px; background-color: #181818; border-radius: 4px;
+            cursor: pointer; transition: transform 0.3s ease, border-color 0.3s;
+            display: flex; flex-direction: column; justify-content: flex-end; align-items: flex-start;
+            padding: 12px; border: 1px solid #252525; position: relative;
+            overflow: hidden;
+            scroll-snap-align: start;
+        }
+        @media (min-width: 768px) {
+            .poster { flex: 0 0 260px; height: 145px; }
+        }
+        .poster:hover { 
+            transform: scale(1.06); 
+            border-color: #E50914;
+            box-shadow: 0 5px 20px rgba(229, 9, 20, 0.4);
+        }
+
+        .poster-title {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #fff;
+            width: 100%;
+            text-align: left;
+            position: relative; z-index: 2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Popup Box UI */
+        .popup {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #181818; padding: 30px 20px; border-radius: 10px; border-top: 5px solid #E50914;
+            box-shadow: 0 0 30px rgba(0,0,0,0.95); z-index: 1001; text-align: center; width: 85%; max-width: 420px;
+        }
+        .popup-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 1000; backdrop-filter: blur(5px);
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="particle-canvas"></canvas>
+
+    <audio id="tudum-sound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3" preload="auto"></audio>
+
+    <div id="login-screen">
+        <div class="profile-container">
+            <h1>Who is watching today?</h1>
+            <div class="profile-gate">
+                <div class="profile-card" onclick="triggerIntro('Hetvi')">
+                    <div class="img-box">
+                        <video src="WhatsApp Video 2026-05-23 at 11.50.42 PM.mp4" autoplay loop muted playsinline></video>
+                    </div>
+                    <div class="profile-name">Hetvi</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="netflix-intro">
+        <div class="netflix-n">N</div>
+    </div>
+
+    <div id="main-dashboard">
+        <div class="navbar">
+            <div class="logo">NETFLIX</div>
+            <div class="nav-links">Home &nbsp;&nbsp; Series &nbsp;&nbsp; Movies &nbsp;&nbsp; New & Popular</div>
+        </div>
+
+        <div class="banner">
+            <video class="banner-video" id="hero-video" src="WhatsApp Video 2026-05-23 at 11.50.42 PM.mp4" autoplay loop muted playsinline></video>
+            <div class="banner-overlay"></div>
+            <div class="banner-content">
+                <h1 class="banner-title">Hetvi's Blockbuster</h1>
+                <span class="banner-match">100% Ultimate Masterpiece Season</span>
+                <p class="banner-desc">A Netflix Premium Biography. Celebrating Hetvi—the unmatched queen of laughter, elite fashion, and the absolute vibe-setter. Get ready for your most magical year yet!</p>
+                <button class="btn" onclick="triggerPlay()">▶ Play Special Blast</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="row-title">Top Facts About Hetvi</div>
+            <div class="row-posters">
+                <div class="top10-card" onclick="showPopup('🥇 Rank #1: The Trendsetter Look', 'Stunning styling sense, perfect denim vibes, and catching the absolute aesthetic look flawlessly!')">
+                    <div class="top10-number">1</div>
+                    <div class="top10-box" style="background-image: url('WhatsApp Image 2026-05-24 at 12.20.15 AM.jpeg');">
+                        <div class="poster-title">The Trendsetter</div>
+                    </div>
+                </div>
+                <div class="top10-card" onclick="showPopup('🥈 Rank #2: Pure Happiness', 'That raw, candid laugh that instantly lights up the whole room. Unmatched positive energy!')">
+                    <div class="top10-number">2</div>
+                    <div class="top10-box" style="background-image: url('WhatsApp Image 2026-05-24 at 12.20.14 AM.jpeg');">
+                        <div class="poster-title">Candid Smile Machine</div>
+                    </div>
+                </div>
+                <div class="top10-card" onclick="showPopup('🥉 Rank #3: The Black Top Sensation', 'Unmatched style, confidence, and killer look that steals the limelight everywhere.')">
+                    <div class="top10-number">3</div>
+                    <div class="top10-box" style="background-color: #222;">
+                        <video src="WhatsApp Video 2026-05-23 at 11.50.44 PM.mp4" autoplay loop muted playsinline></video>
+                        <div class="poster-title">Black Top Magic</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="row-title">Critically Acclaimed Hetvi Chapters</div>
+            <div class="row-posters">
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-24 at 12.20.18 AM.jpeg');" onclick="showPopup('👗 Elegant Chic', 'Rocking the classiest white shirt and denim skirt combination with effortless grace.')">
+                    <div class="poster-title">Chic Vibe Diaries</div>
+                </div>
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-24 at 12.20.13 AM.jpeg');" onclick="showPopup('🪞 Flash & Shade', 'The moody, aesthetic flash mirror selfie that belongs right on a movie poster.')">
+                    <div class="poster-title">Mirror Lens Blur</div>
+                </div>
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-24 at 12.20.15 AM (1).jpeg');" onclick="showPopup('✨ Casual Aesthetic', 'Cool, casual, and showing off the ultimate streetwear energy effortlessly.')">
+                    <div class="poster-title">Casual Aesthetic</div>
+                </div>
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-23 at 11.50.48 PM.jpeg');" onclick="showPopup('🪞 Classic Mirror Diary', 'Perfect styling and checking out the outfit check before heading out.')">
+                    <div class="poster-title">The Mirror Diaries</div>
+                </div>
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-23 at 11.50.47 PM (2).jpeg');" onclick="showPopup('👑 Black Elegance', 'Glow, grace, and completely stealing the night show with pure elegance.')">
+                    <div class="poster-title">Midnight Glow</div>
+                </div>
+                <div class="poster" style="background-image: url('WhatsApp Image 2026-05-23 at 11.50.46 PM.jpeg');" onclick="showPopup('💃 Ethnic Diva', 'The showstopper look! That traditional lehenga flair is pure Bollywood magic.')">
+                    <div class="poster-title">The Bollywood Spin</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="popup-overlay" id="overlay" onclick="closePopup()"></div>
+    <div class="popup" id="wishPopup">
+        <h2 id="popupTitle" style="color: #E50914; margin-bottom: 12px; font-size: 1.4rem;">🎬 Netflix Special</h2>
+        <p id="popupText" style="font-size: 1.05rem; margin-bottom: 20px; line-height: 1.5; color: #f5f5f5;"></p>
+        <button class="btn" style="background:#E50914; color:white; margin-right:0; padding: 8px 20px;" onclick="closePopup()">Close</button>
+    </div>
+
+    <script>
+        // 1. NETFLIX CINEMATIC INTRO TIMING WITH TUDUM SOUND
+        function triggerIntro(name) {
+            const tudum = document.getElementById('tudum-sound');
+            if(tudum) {
+                tudum.volume = 0.6;
+                tudum.play().catch(e => console.log("User interaction required for audio"));
+            }
+
+            const bVideo = document.getElementById('hero-video');
+            if(bVideo) bVideo.play().catch(() => {});
+
+            document.querySelectorAll('video').forEach(v => v.play().catch(() => {}));
+
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.style.opacity = '0';
+            
+            setTimeout(() => {
+                loginScreen.style.display = 'none';
+                const intro = document.getElementById('netflix-intro');
+                intro.style.display = 'flex';
+                
+                setTimeout(() => {
+                    intro.style.display = 'none';
+                    const dashboard = document.getElementById('main-dashboard');
+                    dashboard.style.display = 'block';
+                    setTimeout(() => { dashboard.style.opacity = '1'; }, 50);
+                }, 1300);
+            }, 500);
+        }
+
+        // 2. PARTY BLAST CONFETTI
+        function triggerPlay() {
+            confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 }, colors: ['#E50914', '#ffffff', '#ff0000'] });
+            showPopup("🎉 Happy Birthday In Advance, Hetvi!", "You are officially the showstopper! Hit play on a beautiful new year full of massive love, crazy achievements, and endless smiles. Stay golden! ❤️");
+        }
+
+        function showPopup(title, msg) {
+            document.getElementById('popupTitle').innerText = title;
+            document.getElementById('popupText').innerText = msg;
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('wishPopup').style.display = 'block';
+        }
+
+        function closePopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('wishPopup').style.display = 'none';
+        }
+
+        // 3. FLOATING BACKGROUND LOGIC
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        let particles = [];
+        const particleCount = window.innerWidth < 768 ? 20 : 45;
+
+        for(let i=0; i<particleCount; i++) {
+            particles.push({ 
+                x: Math.random()*canvas.width, 
+                y: Math.random()*canvas.height, 
+                r: Math.random()*2+1, 
+                d: Math.random()*0.3+0.1 
+            });
+        }
+
+        function drawParticles() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = '#E50914';
+            ctx.beginPath();
+            for(let i=0; i<particles.length; i++) {
+                let p = particles[i];
+                ctx.moveTo(p.x, p.y);
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI*2, true);
+            }
+            ctx.fill();
+            updateParticles();
+        }
+
+        function updateParticles() {
+            for(let i=0; i<particles.length; i++) {
+                let p = particles[i];
+                p.y -= p.d;
+                if(p.y < 0) { 
+                    particles[i] = { x: Math.random()*canvas.width, y: canvas.height, r: p.r, d: p.d }; 
+                }
+            }
+        }
+        setInterval(drawParticles, 30);
+    </script>
+</body>
+</html>
